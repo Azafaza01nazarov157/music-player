@@ -1,71 +1,140 @@
-Music Player - Microservices Documentation
+# User & Playlist Service
 
-1. User & Playlist Service (Spring Boot)
+A microservice for managing users and playlists.
 
-Описание
+## Configuration
 
-Этот микросервис отвечает за управление пользователями и плейлистами. Реализован на Spring Boot и использует PostgreSQL для хранения данных.
+The application is configured through environment variables. You should define them in your system or in an `application.properties` or `application.yml` file.
 
-Технологический стек
+### Important Configuration Properties
 
-Java 21
+- **Server Settings:**
+  - `server.port`: The port on which the server will listen (default: 8080)
+  - `spring.profiles.active`: Environment mode (`development` or `production`)
 
-Spring Boot 3.1.1
+- **Database Settings:**
+  - `spring.datasource.url`: PostgreSQL connection URL
+  - `spring.datasource.username`: Database user
+  - `spring.datasource.password`: Database password
 
-Spring Security (JWT аутентификация)
+- **JWT Settings:**
+  - `jwt.secret`: Secret key for JWT authentication
+  - `jwt.expiration`: Token expiration time (default: 3600s)
 
-Spring Data JPA
+### Development Mode
 
-PostgreSQL 14+
+During development, you can disable certain features by setting the following properties in `application.properties`:
 
-Docker
+```
+# Skip database connection during development
+spring.datasource.url=
+```
 
-Функциональность
+This is useful when you want to work on specific parts of the application without having all services running.
 
-Пользователи:
+## Running the Application
 
-Регистрация и аутентификация (JWT)
+```bash
+java -jar user-playlist-service.jar
+```
 
-Управление профилем пользователя
+The server will start on the configured port (default: 8080).
 
-Получение информации о пользователе
+## API Endpoints
 
-Плейлисты:
+- `POST /api/auth/register`: Register a new user
+- `POST /api/auth/login`: Authenticate and get a JWT token
+- `GET /api/user/profile`: Get user profile
+- `PUT /api/user/profile`: Update user profile
+- `POST /api/playlist`: Create a playlist
+- `PUT /api/playlist/:id`: Update a playlist
+- `DELETE /api/playlist/:id`: Delete a playlist
+- `POST /api/playlist/:id/tracks`: Add a track to a playlist
+- `DELETE /api/playlist/:id/tracks/:trackId`: Remove a track from a playlist
+- `GET /api/playlist`: Get user playlists
 
-Создание, редактирование и удаление плейлистов
-
-Добавление/удаление треков
-
-Получение списка плейлистов пользователя
 
 
-2. Streaming Service (Golang)
+Architecture
 
-Описание
 
-Этот микросервис отвечает за потоковую передачу аудиофайлов, используя MinIO для хранения и Redis для кеширования.
+![image](https://github.com/user-attachments/assets/1db7990e-71ee-4014-8c94-0c3c9cecb248)
 
-Технологический стек
+![image](https://github.com/user-attachments/assets/cf6ec9b5-0445-454a-9cbf-c3eb8cdd90f0)
 
-Golang 1.20+
 
-Gin (веб-фреймворк)
 
-GORM (ORM)
+# Music Conveyor
 
-Redis (кеширование популярных треков)
+A microservice for streaming and processing audio files.
 
-MinIO (хранение файлов)
+## Configuration
 
-Docker
+The application is configured through environment variables. You can create a `.env` file in the root directory based on the `.env.example` template:
 
-Функциональность
+```bash
+# Copy the example environment file
+cp .env.example .env
 
-Потоковая передача аудио (streaming)
+# Edit the .env file with your configuration
+nano .env
+```
 
-Конвертация аудио при необходимости
+### Important Environment Variables
 
-Буферизация и кеширование
+- **Server Settings:**
+  - `PORT`: The port on which the server will listen (default: 8080)
+  - `ENV`: Environment mode (`development` or `production`)
 
-Возможность скачивания трека
+- **Database Settings:**
+  - `DB_HOST`: PostgreSQL host (default: localhost)
+  - `DB_PORT`: PostgreSQL port (default: 5432)
+  - `DB_NAME`: Database name
+  - `DB_USER`: Database user
+  - `DB_PASSWORD`: Database password
 
+- **Redis Settings:**
+  - `REDIS_HOST`: Redis host (default: localhost)
+  - `REDIS_PORT`: Redis port (default: 6379)
+  - `REDIS_PASSWORD`: Redis password (if any)
+  - `REDIS_DB`: Redis database index (default: 0)
+
+- **MinIO Settings:**
+  - `MINIO_ENDPOINT`: MinIO server endpoint (default: localhost:9000)
+  - `MINIO_ACCESS_KEY`: MinIO access key
+  - `MINIO_SECRET_KEY`: MinIO secret key
+  - `MINIO_BUCKET`: Default bucket for audio files (default: music)
+  - `MINIO_USE_SSL`: Whether to use SSL for MinIO connection (default: false)
+
+- **Kafka Settings:**
+  - `KAFKA_BROKERS`: Comma-separated list of Kafka brokers (default: localhost:9092)
+  - `KAFKA_GROUP_ID`: Kafka consumer group ID (default: music-conveyor)
+
+### Development Mode
+
+During development, you can skip connecting to external services by setting the following environment variables in your `.env` file:
+
+```
+# Skip services during development
+DB_SKIP=true
+REDIS_SKIP=true
+MINIO_SKIP=true
+KAFKA_SKIP=true
+```
+
+This is useful when you want to work on specific parts of the application without having all services running.
+
+## Running the Application
+
+```bash
+go run cmd/app/main.go
+```
+
+The server will start on the configured port (default: 8080).
+
+## API Endpoints
+
+- `GET /health`: Health check endpoint
+- `GET /api/stream/:id`: Stream a track
+- `GET /api/stream/:id/download`: Download a track
+- `GET /api/stream/status`: Check streaming status 

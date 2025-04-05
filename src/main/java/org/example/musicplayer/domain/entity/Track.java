@@ -45,6 +45,9 @@ public class Track extends AbstractAuditingEntity<Long> {
     @Column(name = "file_format")
     private String fileFormat;
 
+    @Column(name = "status")
+    private String status;
+
     private BigDecimal duration;
 
     @Column(name = "bit_rate")

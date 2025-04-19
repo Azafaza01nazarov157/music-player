@@ -67,7 +67,7 @@ public class PasswordResetService {
         mailService.sendMail(
                 passwordResetRequest.getEmail(),
                 WebUtils.getMessage("Forgot password?"),
-                WebUtils.renderTemplate("/mails/passwordReset", Collections.singletonMap("confirmation_url", resetPasswordUrl))
+                WebUtils.renderTemplate("passwordReset", Collections.singletonMap("confirmation_url", resetPasswordUrl))
         );
         return "";
     }

@@ -3,11 +3,14 @@ package org.example.musicplayer.service.pleyer.impl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.musicplayer.domain.entity.Album;
+import org.example.musicplayer.domain.entity.User;
 import org.example.musicplayer.domain.repository.AlbumRepository;
 import org.example.musicplayer.dtos.album.AlbumDTO;
+import org.example.musicplayer.dtos.album.CreateAlbumDTO;
 import org.example.musicplayer.exception.dto.ErrorDto;
 import org.example.musicplayer.exception.errors.NotFoundException;
 import org.example.musicplayer.mapper.AlbumMapper;
+import org.example.musicplayer.service.integration.KafkaIntegrationService;
 import org.example.musicplayer.service.pleyer.AlbumService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,13 +27,28 @@ public class AlbumServiceImpl implements AlbumService {
 
     private final AlbumRepository albumRepository;
     private final AlbumMapper albumMapper;
+    private final KafkaIntegrationService kafkaIntegrationService;
 
     @Override
-    public AlbumDTO save(AlbumDTO albumDTO) {
+    @Transactional
+    public CreateAlbumDTO save(CreateAlbumDTO albumDTO, User currentUser) {
         log.info("Saving album: {}", albumDTO.getTitle());
-        Album album = albumMapper.toEntity(albumDTO);
-        album = albumRepository.save(album);
-        return albumMapper.toDto(album);
+        Album album = new Album();
+        album.setTitle(albumDTO.getTitle());
+        album.setDescription(albumDTO.getDescription());
+        album.setReleaseDate(albumDTO.getReleaseDate());
+        album.setUser(currentUser);
+        album.setGenre(albumDTO.getGenre());
+        album.setCoverUrl(albumDTO.getCoverUrl());
+        albumRepository.save(album);
+        kafkaIntegrationService.sendAlbumToKafka(album);
+        return CreateAlbumDTO.builder()
+                .coverUrl(album.getCoverUrl())
+                .genre(album.getGenre())
+                .releaseDate(album.getReleaseDate())
+                .description(album.getDescription())
+                .title(album.getTitle())
+                .build();
     }
 
     @Override
@@ -42,6 +60,8 @@ public class AlbumServiceImpl implements AlbumService {
 
         album = albumMapper.updateEntity(albumDTO, album);
         album = albumRepository.save(album);
+        kafkaIntegrationService.sendAlbumToKafka(album);
+
         return albumMapper.toDto(album);
     }
 
@@ -64,9 +84,9 @@ public class AlbumServiceImpl implements AlbumService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<AlbumDTO> findByArtistId(Long artistId) {
-        log.info("Fetching albums for artist with id: {}", artistId);
-        return albumRepository.findByArtistId(artistId).stream()
+    public List<AlbumDTO> findByUserId(Long userId) {
+        log.info("Fetching albums for user with id: {}", userId);
+        return albumRepository.findByUserId(userId).stream()
                 .map(albumMapper::toDto)
                 .collect(Collectors.toList());
     }
@@ -82,9 +102,9 @@ public class AlbumServiceImpl implements AlbumService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<AlbumDTO> findByArtistIdAndTitle(Long artistId, String title) {
-        log.info("Fetching albums for artist id: {} with title containing: {}", artistId, title);
-        return albumRepository.findByArtistIdAndTitleContainingIgnoreCase(artistId, title).stream()
+    public List<AlbumDTO> findByUserIdAndTitle(Long userId, String title) {
+        log.info("Fetching albums for user id: {} with title containing: {}", userId, title);
+        return albumRepository.findByUserIdAndTitleContainingIgnoreCase(userId, title).stream()
                 .map(albumMapper::toDto)
                 .collect(Collectors.toList());
     }
@@ -92,6 +112,8 @@ public class AlbumServiceImpl implements AlbumService {
     @Override
     public void deleteById(Long id) {
         log.info("Deleting album with id: {}", id);
+        kafkaIntegrationService.sendAlbumDeletedToKafka(id);
+
         albumRepository.deleteById(id);
     }
 }

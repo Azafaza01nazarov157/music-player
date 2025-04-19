@@ -30,6 +30,9 @@ public class RoleLoader implements ApplicationRunner {
         final Role adminRole = new Role();
         adminRole.setName("ADMIN");
         roleRepository.save(adminRole);
+        final Role artistRole = new Role();
+        adminRole.setName("ARTIST");
+        roleRepository.save(artistRole);
     }
 
 }

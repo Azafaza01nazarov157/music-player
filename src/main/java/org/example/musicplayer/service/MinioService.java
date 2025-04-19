@@ -1,18 +1,11 @@
 package org.example.musicplayer.service;
 
 import io.minio.*;
-import io.minio.errors.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -42,24 +35,21 @@ public class MinioService {
 
     /**
      * Uploads a file to MinIO storage
-     * 
-     * @param file The file to upload
+     *
+     * @param file     The file to upload
      * @param fileName Optional filename (if null, will use original filename)
      * @return The object path in MinIO
      */
-    public String uploadFile(MultipartFile file, String fileName) {
+    public String uploadFile(MultipartFile file, String fileName, String userId) {
         try {
             if (fileName == null) {
                 fileName = file.getOriginalFilename();
             }
-            
-            // Ensure the bucket exists
+
             init();
-            
-            // Create a unique object name if needed
-            String objectName = UUID.randomUUID() + "-" + fileName;
-            
-            // Upload the file to MinIO
+
+            String objectName = userId + "/" + fileName;
+
             minioClient.putObject(
                     PutObjectArgs.builder()
                             .bucket(bucketName)
@@ -68,21 +58,20 @@ public class MinioService {
                             .contentType(file.getContentType())
                             .build()
             );
-            
+
             log.info("File uploaded successfully to MinIO: {}", objectName);
-            
-            // Return the complete path to the file
+
             return bucketName + "/" + objectName;
-            
+
         } catch (Exception e) {
             log.error("Error uploading file to MinIO: {}", e.getMessage(), e);
             throw new RuntimeException("Could not upload file to MinIO", e);
         }
     }
-    
+
     /**
      * Gets a presigned URL for an object
-     * 
+     *
      * @param objectName The name of the object
      * @return The presigned URL
      */

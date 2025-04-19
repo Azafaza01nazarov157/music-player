@@ -18,7 +18,7 @@ public interface TrackService {
 
     List<TrackDTO> findByTitle(String title);
 
-    List<TrackDTO> findByArtistId(Long artistId);
+    List<TrackDTO> findByUserId(Long userId);
 
     List<TrackDTO> findByAlbumId(Long albumId);
 

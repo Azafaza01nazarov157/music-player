@@ -9,6 +9,7 @@ import org.example.musicplayer.exception.dto.ErrorDto;
 import org.example.musicplayer.exception.errors.BadRequestException;
 import org.example.musicplayer.exception.errors.NotFoundException;
 import org.example.musicplayer.mapper.TrackMapper;
+import org.example.musicplayer.service.integration.KafkaIntegrationService;
 import org.example.musicplayer.service.pleyer.TrackService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +26,7 @@ public class TrackServiceImpl implements TrackService {
 
     private final TrackRepository trackRepository;
     private final TrackMapper trackMapper;
+    private final KafkaIntegrationService kafkaIntegrationService;
 
     @Override
     public TrackDTO save(TrackDTO trackDTO) {
@@ -32,6 +34,8 @@ public class TrackServiceImpl implements TrackService {
 
         Track track = trackMapper.toEntity(trackDTO);
         track = trackRepository.save(track);
+
+        kafkaIntegrationService.sendTrackToKafka(track);
 
         return trackMapper.toDTO(track);
     }
@@ -75,9 +79,9 @@ public class TrackServiceImpl implements TrackService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<TrackDTO> findByArtistId(Long artistId) {
-        log.info("Fetching tracks for artist with id: {}", artistId);
-        List<Track> tracks = trackRepository.findByArtistId(artistId);
+    public List<TrackDTO> findByUserId(Long userId) {
+        log.info("Fetching tracks for user with id: {}", userId);
+        List<Track> tracks = trackRepository.findByUserId(userId);
         return trackMapper.toDTOList(tracks);
     }
 
@@ -113,6 +117,8 @@ public class TrackServiceImpl implements TrackService {
         Track updatedTrack = trackMapper.updateTrackFromDTO(trackDTO, existingTrack);
         updatedTrack = trackRepository.save(updatedTrack);
 
+        kafkaIntegrationService.sendTrackToKafka(updatedTrack);
+
         return trackMapper.toDTO(updatedTrack);
     }
 
@@ -122,6 +128,9 @@ public class TrackServiceImpl implements TrackService {
         if (!trackRepository.existsById(id)) {
             throw new NotFoundException(new ErrorDto("404", "Track not found with id: " + id));
         }
+
+        kafkaIntegrationService.sendTrackDeletedToKafka(id);
+
         trackRepository.deleteById(id);
     }
 

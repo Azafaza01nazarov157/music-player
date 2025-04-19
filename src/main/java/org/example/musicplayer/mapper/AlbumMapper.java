@@ -1,10 +1,10 @@
 package org.example.musicplayer.mapper;
 
 import org.example.musicplayer.domain.entity.Album;
-import org.example.musicplayer.domain.entity.Artist;
 import org.example.musicplayer.domain.entity.Track;
-import org.example.musicplayer.domain.repository.ArtistRepository;
+import org.example.musicplayer.domain.entity.User;
 import org.example.musicplayer.domain.repository.TrackRepository;
+import org.example.musicplayer.domain.repository.UserRepository;
 import org.example.musicplayer.dtos.album.AlbumDTO;
 import org.example.musicplayer.exception.dto.ErrorDto;
 import org.example.musicplayer.exception.errors.NotFoundException;
@@ -22,12 +22,12 @@ import java.util.stream.Collectors;
 public abstract class AlbumMapper {
 
     @Autowired
-    protected ArtistRepository artistRepository;
+    protected UserRepository userRepository;
 
     @Autowired
     protected TrackRepository trackRepository;
 
-    @Mapping(target = "artistId", source = "artist.id")
+    @Mapping(target = "userId", source = "user.id")
     @Mapping(target = "trackIds", ignore = true)
     public abstract AlbumDTO toDto(Album album);
 
@@ -39,40 +39,31 @@ public abstract class AlbumMapper {
     }
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "artist", ignore = true)
+    @Mapping(target = "user", ignore = true)
     @Mapping(target = "tracks", ignore = true)
     public abstract Album toEntity(AlbumDTO albumDTO);
 
     @AfterMapping
     protected void afterToEntity(AlbumDTO albumDTO, @MappingTarget Album album) {
-        if (albumDTO.getArtistId() != null) {
-            Artist artist = artistRepository.findById(albumDTO.getArtistId())
+        if (albumDTO.getUserId() != null) {
+            User user = userRepository.findById(albumDTO.getUserId())
                     .orElseThrow(() -> new NotFoundException(
-                            new ErrorDto("404", "Artist not found with id: " + albumDTO.getArtistId())));
-            album.setArtist(artist);
+                            new ErrorDto("404", "User not found with id: " + albumDTO.getUserId())));
+            album.setUser(user);
         }
     }
 
     @Mapping(target = "tracks", ignore = true)
-    @Mapping(target = "artist", ignore = true)
+    @Mapping(target = "user", ignore = true)
     public abstract Album updateEntity(AlbumDTO albumDTO, @MappingTarget Album album);
 
     @AfterMapping
     protected void afterUpdateEntity(AlbumDTO albumDTO, @MappingTarget Album album) {
-        if (albumDTO.getArtistId() != null) {
-            Artist artist = artistRepository.findById(albumDTO.getArtistId())
+        if (albumDTO.getUserId() != null && (album.getUser() == null || !album.getUser().getId().equals(albumDTO.getUserId()))) {
+            User user = userRepository.findById(albumDTO.getUserId())
                     .orElseThrow(() -> new NotFoundException(
-                            new ErrorDto("404", "Artist not found with id: " + albumDTO.getArtistId())));
-            album.setArtist(artist);
-        }
-
-        if (albumDTO.getTrackIds() != null && !albumDTO.getTrackIds().isEmpty()) {
-            List<Track> tracks = trackRepository.findAllById(albumDTO.getTrackIds());
-            if (tracks.size() != albumDTO.getTrackIds().size()) {
-                throw new NotFoundException(
-                        new ErrorDto("404", "One or more tracks not found"));
-            }
-            album.setTracks(new HashSet<>(tracks));
+                            new ErrorDto("404", "User not found with id: " + albumDTO.getUserId())));
+            album.setUser(user);
         }
     }
 }

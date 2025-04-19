@@ -12,6 +12,7 @@ import org.example.musicplayer.exception.dto.ErrorDto;
 import org.example.musicplayer.exception.errors.BadRequestException;
 import org.example.musicplayer.exception.errors.NotFoundException;
 import org.example.musicplayer.mapper.UserMapper;
+import org.example.musicplayer.service.integration.KafkaIntegrationService;
 import org.example.musicplayer.service.user.UserService;
 import org.example.musicplayer.util.ReferencedWarning;
 import org.springframework.data.domain.Page;
@@ -30,17 +31,20 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final KafkaIntegrationService kafkaIntegrationService;
 
     public UserServiceImpl(final UserRepository userRepository,
                            final RoleRepository roleRepository,
                            final PasswordEncoder passwordEncoder,
                            final UserMapper userMapper,
-                           final RefreshTokenRepository refreshTokenRepository) {
+                           final RefreshTokenRepository refreshTokenRepository,
+                           final KafkaIntegrationService kafkaIntegrationService) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
         this.userMapper = userMapper;
         this.refreshTokenRepository = refreshTokenRepository;
+        this.kafkaIntegrationService = kafkaIntegrationService;
     }
 
     @Override
@@ -88,6 +92,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void delete(final Long id) {
+        kafkaIntegrationService.sendUserDeletedToKafka(id);
         userRepository.deleteById(id);
     }
 

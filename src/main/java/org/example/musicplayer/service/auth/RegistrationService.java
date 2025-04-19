@@ -12,6 +12,7 @@ import org.example.musicplayer.dtos.auth.response.CompleteAuthenticationResponse
 import org.example.musicplayer.exception.dto.ErrorDto;
 import org.example.musicplayer.exception.errors.BadRequestException;
 import org.example.musicplayer.exception.errors.NotFoundException;
+import org.example.musicplayer.service.integration.KafkaIntegrationService;
 import org.example.musicplayer.service.mail.MailService;
 import org.example.musicplayer.util.UserRoles;
 import org.example.musicplayer.util.WebUtils;
@@ -31,17 +32,21 @@ public class RegistrationService {
     private final RoleRepository roleRepository;
     private final CrossOrigin crossOrigin;
     private final MailService mailService;
+    private final KafkaIntegrationService kafkaIntegrationService;
+
 
     public RegistrationService(final UserRepository userRepository,
                                final PasswordEncoder passwordEncoder,
                                final RoleRepository roleRepository,
-                               CrossOrigin crossOrigin,
-                               MailService mailService) {
+                               final CrossOrigin crossOrigin,
+                               final MailService mailService,
+                               final KafkaIntegrationService kafkaIntegrationService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.roleRepository = roleRepository;
         this.crossOrigin = crossOrigin;
         this.mailService = mailService;
+        this.kafkaIntegrationService = kafkaIntegrationService;
     }
 
     public void register(final RegistrationRequest registrationRequest) {
@@ -54,6 +59,7 @@ public class RegistrationService {
         user.setAuthenticationKey(passwordResetKey);
         user.setEmail(registrationRequest.getEmail());
         user.setFirstName(registrationRequest.getFirstName());
+        user.setUsername(registrationRequest.getUsername());
         user.setLastName(registrationRequest.getLastName());
         user.setPassword(passwordEncoder.encode(registrationRequest.getPassword()));
         user.setRoles(Collections.singleton(roleRepository.findTopByName(UserRoles.USER)));
@@ -65,9 +71,12 @@ public class RegistrationService {
 
         mailService.sendMail(user.getEmail(),
                 "Complete the registration",
-                WebUtils.renderTemplate("/mails/authentication",
+                WebUtils.renderTemplate("authentication",
                         Collections.singletonMap("confirmation_url",
                                 url)));
+
+        kafkaIntegrationService.sendUserToKafka(user);
+
     }
 
     public CompleteAuthenticationResponse completeRegistration(final CompleteAuthenticationRequest completeAuthenticationRequest) {

@@ -1,6 +1,7 @@
 package org.example.musicplayer.service;
 
 import org.example.musicplayer.kafka.sender.KafkaSender;
+import org.example.musicplayer.model.TrackProcessingDto;
 import org.example.musicplayer.model.TrackProcessingRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -27,31 +28,18 @@ public class KafkaProducerService {
      * Sends a track processing request to Kafka
      * 
      * @param request The track processing request
-     * @return CompletableFuture<SendResult> with the result of the send operation
      */
-//    public CompletableFuture<SendResult<String, String>> sendTrackProcessingRequest(TrackProcessingRequest request) {
-//        try {
-//            String key = request.getTrackId();
-//            String value = objectMapper.writeValueAsString(request);
-//
-//            log.info("Sending track processing request to Kafka: {}", key);
-//
-//            CompletableFuture<SendResult<String, String>> future = kafkaSender.sendAuthCompletableFuture(audioProcessingTopic, key, value);
-//
-//            future.whenComplete((result, ex) -> {
-//                if (ex == null) {
-//                    log.info("Track processing request sent successfully: {} - offset: {}",
-//                            key, result.getRecordMetadata().offset());
-//                } else {
-//                    log.error("Unable to send track processing request: {}", ex.getMessage(), ex);
-//                }
-//            });
-//
-//            return future;
-//
-//        } catch (Exception e) {
-//            log.error("Error serializing or sending track processing request: {}", e.getMessage(), e);
-//            throw new RuntimeException("Could not send track processing request", e);
-//        }
-//    }
+    public void sendTrackProcessingRequest(TrackProcessingDto request) {
+        try {
+            String key = request.getTrackId();
+
+            log.info("Sending track processing request to Kafka: {}", key);
+
+            kafkaSender.sendAuth(audioProcessingTopic, key, request);
+
+        } catch (Exception e) {
+            log.error("Error serializing or sending track processing request: {}", e.getMessage(), e);
+            throw new RuntimeException("Could not send track processing request", e);
+        }
+    }
 } 

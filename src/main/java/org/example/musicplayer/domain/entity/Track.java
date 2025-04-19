@@ -25,15 +25,11 @@ public class Track extends AbstractAuditingEntity<Long> {
     private String title;
 
     @ManyToOne
-    @JoinColumn(name = "artist_id", nullable = false)
-    private Artist artist;
-
-    @ManyToOne
     @JoinColumn(name = "album_id")
     private Album album;
 
     @ManyToOne
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
     @Column(name = "file_path", nullable = false)

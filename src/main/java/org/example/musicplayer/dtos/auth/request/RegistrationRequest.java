@@ -23,6 +23,9 @@ public class RegistrationRequest {
     private String firstName;
 
     @Size(max = 255)
+    private String username;
+
+    @Size(max = 255)
     private String lastName;
 
     @NotNull

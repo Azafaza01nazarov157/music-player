@@ -1,25 +1,25 @@
-package org.example.musicplayer.dtos.album;
+package org.example.musicplayer.dtos.kafka;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
-import java.util.HashSet;
-import java.util.Set;
+import java.time.OffsetDateTime;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AlbumDTO {
+public class AlbumMessage {
     private Long id;
     private String title;
     private Long userId;
-    private LocalDate releaseDate;
+    private String releaseDate;
     private String coverUrl;
     private String genre;
     private String description;
-    private Set<Long> trackIds = new HashSet<>();
+    private String createdAt;
+    private String updatedAt;
+    private Boolean isDeleted;
 }

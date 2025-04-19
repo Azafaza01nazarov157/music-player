@@ -25,8 +25,8 @@ public class Album extends AbstractAuditingEntity<Long> {
     private String title;
 
     @ManyToOne
-    @JoinColumn(name = "artist_id", nullable = false)
-    private Artist artist;
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @Column(name = "release_date")
     private LocalDate releaseDate;

@@ -15,4 +15,7 @@ public class KafkaTopics {
 
     private String audioProcessing;
     private String audioProcessingComplete;
+    private String userSync;
+    private String trackSync;
+    private String albumSync;
 }

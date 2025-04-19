@@ -1,0 +1,91 @@
+spring:
+  application:
+    name: music-player
+  banner:
+    location: classpath:banner/banner.txt
+  datasource:
+    jdbcUrl: jdbc:postgresql://${PG_HOST:localhost}:${PG_PORT:5432}/${PG_DATABASE:postgres}?ApplicationName=${spring.application.name}
+    username: ${JDBC_DATABASE_USERNAME:postgres}
+    password: ${JDBC_DATABASE_PASSWORD:postgres}
+    hikari:
+      connection-timeout: 30000
+      maximum-pool-size: 10
+  flyway:
+    url: ${spring.datasource.jdbcUrl}
+    user: ${spring.datasource.username}
+    password: ${spring.datasource.password}
+    baseline-on-migrate: true
+    enabled: true
+    locations: classpath:/db/migration
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+  jpa:
+    hibernate:
+      ddl-auto: ${JPA_DDL_AUTO:validate}
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          lob:
+            non_contextual_creation: true
+        id:
+          new_generator_mappings: true
+  docker:
+    compose:
+      lifecycle-management: start-only
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    default-topic-partitions: 12
+    default-replication-factor: 1
+    kafka_prefix: ${KAFKA_PREFIX:1}
+    properties:
+      request.timeout.ms: 120000
+    topics:
+      audio-processing: audio.processing
+      audio-processing-complete: audio.processing.complete
+      user-sync: music-player-user-sync
+      track-sync: music-player-track-sync
+      album-sync: music-player-album-sync
+    producer:
+      bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+      max-request-size: 134217728
+      buffer-memory: 134217728
+      max-attempts: ${KAFKA_PRODUCER_MAX_ATTEMPTS:3}
+      backoff-interval: ${KAFKA_PRODUCER_BACKOFF_INTERVAL:5000}
+      default-replication-factor: ${KAFKA_PRODUCER_DEFAULT_REPLICATION_FACTOR:1}
+      kafka_prefix: ${KAFKA_PREFIX:1}
+    consumer:
+      bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+      backoff-interval: 5000
+      max-attempts: 3
+      group-id: audio-processor
+  mail:
+    host: ${SMTP_HOST:smtp.gmail.com}
+    username: ${SMTP_USERNAME:azamatboss001@gmail.com}
+    password: ${SMTP_PASSWORD:iatqmoajorqvynwr}
+    port: 587
+    properties.mail.smtp:
+      auth: true
+      starttls:
+        enable: true
+        required: true
+      connectiontimeout: 15000
+      timeout: 45000
+  minio:
+    endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
+    accessKey: ${MINIO_ACCESS_KEY:adminUser}
+    secretKey: ${MINIO_SECRET_KEY:adminUser}
+    bucketName: ${MINIO_BUCKET_NAME:audio-tracks}
+    secure: ${MINIO_SECURE:false}
+jwt:
+  secret: E27E5C94368F2FE3C4862F53DD433B26
+
+server:
+  port: ${PORT:8187}
+
+api:
+  cross-origin: ${CORS_URL:*}
+  authentication-url: ${AUTHENTICATION_URL:http://localhost:8187}
+

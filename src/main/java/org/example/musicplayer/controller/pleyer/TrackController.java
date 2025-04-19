@@ -1,48 +1,98 @@
 package org.example.musicplayer.controller.pleyer;
 
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.musicplayer.domain.entity.User;
 import org.example.musicplayer.dtos.track.TrackDTO;
 import org.example.musicplayer.exception.dto.ErrorDto;
+import org.example.musicplayer.exception.errors.ForbiddenException;
 import org.example.musicplayer.exception.errors.NotFoundException;
-import org.example.musicplayer.model.TrackProcessingRequest;
+import org.example.musicplayer.model.TrackProcessingDto;
 import org.example.musicplayer.service.TrackUploadService;
 import org.example.musicplayer.service.pleyer.TrackService;
+import org.example.musicplayer.service.user.UserService;
+import org.example.musicplayer.util.UserRoles;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.security.Principal;
 import java.util.List;
+
+import static org.example.musicplayer.config.constraint.Endpoints.API;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/tracks")
+@RequestMapping(API + "/tracks")
 @RequiredArgsConstructor
+@SecurityRequirement(name = "bearer-jwt")
 public class TrackController {
 
     private final TrackService trackService;
     private final TrackUploadService trackUploadService;
+    private final UserService userService;
 
     @PostMapping
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_ARTIST')")
     public ResponseEntity<TrackDTO> createTrack(@RequestBody TrackDTO trackDTO) {
         log.info("REST request to create Track: {}", trackDTO.getTitle());
+        
+        // Устанавливаем текущего пользователя как создателя трека
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        User currentUser = userService.getUserByEmail(authentication.getName());
+        
+        // Проверка роли пользователя
+        boolean isArtist = currentUser.getRoles().stream()
+                .anyMatch(role -> role.getName().equals("ARTIST"));
+        
+        if (!isArtist) {
+            throw new ForbiddenException(new ErrorDto("403", "Only artists can create tracks"));
+        }
+        
+        // Устанавливаем ID текущего пользователя
+        trackDTO.setUserId(currentUser.getId());
+        
         TrackDTO result = trackService.save(trackDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_ARTIST')")
     public ResponseEntity<TrackDTO> updateTrack(
             @PathVariable Long id,
             @RequestBody TrackDTO trackDTO) {
         log.info("REST request to update Track: {}, {}", id, trackDTO.getTitle());
+        
+        // Проверка существования трека
+        TrackDTO existingTrack = trackService.findById(id)
+                .orElseThrow(() -> new NotFoundException(
+                        new ErrorDto("404", "Track not found with id: " + id)));
+        
+        // Проверка прав на редактирование
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        User currentUser = userService.getUserByEmail(authentication.getName());
+        
+        boolean isAdmin = currentUser.getRoles().stream()
+                .anyMatch(role -> role.getName().equals("ADMIN"));
+        
+        // Только владелец трека или админ может редактировать
+        if (!isAdmin && !existingTrack.getUserId().equals(currentUser.getId())) {
+            throw new ForbiddenException(
+                    new ErrorDto("403", "You don't have permission to edit this track"));
+        }
+        
         TrackDTO result = trackService.update(id, trackDTO);
         return ResponseEntity.ok(result);
     }
 
     @PatchMapping("/{id}/status")
+    @PreAuthorize("hasAnyAuthority('" + UserRoles.ADMIN + "', '" + UserRoles.ARTIST + "')")
     public ResponseEntity<TrackDTO> updateTrackStatus(
             @PathVariable Long id,
             @RequestParam String status) {
@@ -52,44 +102,25 @@ public class TrackController {
     }
 
     @GetMapping
-    public ResponseEntity<List<TrackDTO>> getAllTracks(
-            @RequestParam(required = false) String title,
-            @RequestParam(required = false) Long artistId,
-            @RequestParam(required = false) Long albumId,
-            @RequestParam(required = false) String status) {
-        
-        log.info("REST request to get Tracks with filters: title={}, artistId={}, albumId={}, status={}",
-                title, artistId, albumId, status);
-        
-        List<TrackDTO> result;
-        
-        if (title != null && !title.isEmpty()) {
-            result = trackService.findByTitle(title);
-        } else if (artistId != null) {
-            result = trackService.findByArtistId(artistId);
-        } else if (albumId != null) {
-            result = trackService.findByAlbumId(albumId);
-        } else if (status != null && !status.isEmpty()) {
-            result = trackService.findByStatus(status);
-        } else {
-            result = trackService.findAll();
-        }
-        
-        return ResponseEntity.ok(result);
+    public ResponseEntity<List<TrackDTO>> getAllTracks() {
+        log.info("REST request to get all Tracks");
+        List<TrackDTO> tracks = trackService.findAll();
+        return ResponseEntity.ok(tracks);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<TrackDTO> getTrack(@PathVariable Long id) {
         log.info("REST request to get Track: {}", id);
-        return trackService.findById(id)
-                .map(ResponseEntity::ok)
-                .orElseThrow(() -> new NotFoundException(new ErrorDto("404","Track not found with id: " + id)));
+        TrackDTO trackDTO = trackService.findById(id)
+                .orElseThrow(() -> new NotFoundException(
+                        new ErrorDto("404", "Track not found with id: " + id)));
+        return ResponseEntity.ok(trackDTO);
     }
 
-    @GetMapping("/artist/{artistId}")
-    public ResponseEntity<List<TrackDTO>> getTracksByArtist(@PathVariable Long artistId) {
-        log.info("REST request to get Tracks by Artist: {}", artistId);
-        List<TrackDTO> tracks = trackService.findByArtistId(artistId);
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<TrackDTO>> getTracksByUser(@PathVariable Long userId) {
+        log.info("REST request to get Tracks by User: {}", userId);
+        List<TrackDTO> tracks = trackService.findByUserId(userId);
         return ResponseEntity.ok(tracks);
     }
 
@@ -101,6 +132,7 @@ public class TrackController {
     }
 
     @GetMapping("/status/{status}")
+    @PreAuthorize("hasAnyAuthority('" + UserRoles.ADMIN + "', '" + UserRoles.ARTIST + "')")
     public ResponseEntity<List<TrackDTO>> getTracksByStatus(@PathVariable String status) {
         log.info("REST request to get Tracks by Status: {}", status);
         List<TrackDTO> tracks = trackService.findByStatus(status);
@@ -108,6 +140,7 @@ public class TrackController {
     }
 
     @PostMapping("/{id}/increment-play")
+    @PreAuthorize("hasAnyAuthority('" + UserRoles.ADMIN + "', '" + UserRoles.ARTIST + "')")
     public ResponseEntity<Void> incrementPlayCount(@PathVariable Long id) {
         log.info("REST request to increment play count for Track: {}", id);
         trackService.incrementPlayCount(id);
@@ -115,32 +148,39 @@ public class TrackController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('" + UserRoles.ADMIN + "', '" + UserRoles.ARTIST + "')")
     public ResponseEntity<Void> deleteTrack(@PathVariable Long id) {
         log.info("REST request to delete Track: {}", id);
+        
+        TrackDTO existingTrack = trackService.findById(id)
+                .orElseThrow(() -> new NotFoundException(
+                        new ErrorDto("404", "Track not found with id: " + id)));
+        
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        User currentUser = userService.getUserByEmail(authentication.getName());
+        
+        boolean isAdmin = currentUser.getRoles().stream()
+                .anyMatch(role -> role.getName().equals("ADMIN"));
+        
+        if (!isAdmin && !existingTrack.getUserId().equals(currentUser.getId())) {
+            throw new ForbiddenException(
+                    new ErrorDto("403", "You don't have permission to delete this track"));
+        }
+        
         trackService.deleteById(id);
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<TrackProcessingRequest> uploadTrack(
+    @PreAuthorize("hasAnyAuthority('" + UserRoles.ADMIN + "', '" + UserRoles.ARTIST + "')")
+    public ResponseEntity<TrackProcessingDto> uploadTrack(
             @RequestParam("file") MultipartFile file,
             @RequestParam("trackId") String trackId,
-            @RequestParam("title") String title,
-            @RequestParam("artist") String artist,
-            @RequestParam(value = "album", required = false) String album,
-            @RequestParam(value = "genre", required = false) String genre,
-            @RequestParam(value = "duration", required = false) Integer duration,
-            @RequestParam(value = "releaseDate", required = false) String releaseDate,
-            @RequestParam(value = "isPublic", defaultValue = "true") boolean isPublic,
-            Authentication authentication
+            Principal principal
     ) {
-        log.info("Received track upload request: {}, artist: {}", title, artist);
 
-        String userId = authentication.getName();
-
-        TrackProcessingRequest request = trackUploadService.uploadAndProcessTrack(
-                file, trackId, userId, title, artist, album, genre, duration, releaseDate, isPublic
-        );
+        User user = userService.getUserByEmail(principal.getName());
+        TrackProcessingDto request = trackUploadService.uploadAndProcessTrack(file, trackId, user.getId().toString());
 
         return ResponseEntity.ok(request);
     }

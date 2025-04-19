@@ -40,7 +40,10 @@ public class KafkaConfig extends AbstractKafkaConfig {
                 "org.example.integration.domain.entity.*");
         Set<String> newMenuPostEventCreateTopic = Set.of(
                 kafkaTopics.getAudioProcessing(),
-                kafkaTopics.getAudioProcessingComplete()
+                kafkaTopics.getAudioProcessingComplete(),
+                kafkaTopics.getUserSync(),
+                kafkaTopics.getTrackSync(),
+                kafkaTopics.getAlbumSync()
         );
         return new KafkaConfigParameters(
                 trustedPackages,

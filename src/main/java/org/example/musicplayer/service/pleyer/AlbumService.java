@@ -1,13 +1,15 @@
 package org.example.musicplayer.service.pleyer;
 
 
+import org.example.musicplayer.domain.entity.User;
 import org.example.musicplayer.dtos.album.AlbumDTO;
+import org.example.musicplayer.dtos.album.CreateAlbumDTO;
 
 import java.util.List;
 import java.util.Optional;
 
 public interface AlbumService {
-    AlbumDTO save(AlbumDTO albumDTO);
+    CreateAlbumDTO save(CreateAlbumDTO albumDTO, User currentUser);
 
     AlbumDTO update(Long id, AlbumDTO albumDTO);
 
@@ -15,11 +17,11 @@ public interface AlbumService {
 
     Optional<AlbumDTO> findById(Long id);
 
-    List<AlbumDTO> findByArtistId(Long artistId);
+    List<AlbumDTO> findByUserId(Long userId);
 
     List<AlbumDTO> findByTitle(String title);
 
-    List<AlbumDTO> findByArtistIdAndTitle(Long artistId, String title);
+    List<AlbumDTO> findByUserIdAndTitle(Long userId, String title);
 
     void deleteById(Long id);
 }

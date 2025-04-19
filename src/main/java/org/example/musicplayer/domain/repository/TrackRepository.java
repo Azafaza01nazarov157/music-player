@@ -11,7 +11,7 @@ import java.util.Optional;
 public interface TrackRepository extends JpaRepository<Track, Long> {
     List<Track> findByTitleContainingIgnoreCase(String title);
 
-    List<Track> findByArtistId(Long artistId);
+    List<Track> findByUserId(Long userId);
 
     List<Track> findByAlbumId(Long albumId);
 

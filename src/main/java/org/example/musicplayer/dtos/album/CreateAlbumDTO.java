@@ -6,20 +6,15 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
-import java.util.HashSet;
-import java.util.Set;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AlbumDTO {
-    private Long id;
+public class CreateAlbumDTO {
     private String title;
-    private Long userId;
     private LocalDate releaseDate;
     private String coverUrl;
     private String genre;
     private String description;
-    private Set<Long> trackIds = new HashSet<>();
 }

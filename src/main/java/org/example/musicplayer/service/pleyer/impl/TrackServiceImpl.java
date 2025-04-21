@@ -2,8 +2,12 @@ package org.example.musicplayer.service.pleyer.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.example.musicplayer.domain.entity.Album;
 import org.example.musicplayer.domain.entity.Track;
+import org.example.musicplayer.domain.entity.User;
+import org.example.musicplayer.domain.repository.AlbumRepository;
 import org.example.musicplayer.domain.repository.TrackRepository;
+import org.example.musicplayer.dtos.track.CreateTrackDTO;
 import org.example.musicplayer.dtos.track.TrackDTO;
 import org.example.musicplayer.exception.dto.ErrorDto;
 import org.example.musicplayer.exception.errors.BadRequestException;
@@ -27,17 +31,45 @@ public class TrackServiceImpl implements TrackService {
     private final TrackRepository trackRepository;
     private final TrackMapper trackMapper;
     private final KafkaIntegrationService kafkaIntegrationService;
+    private final AlbumRepository albomRepository;
 
     @Override
-    public TrackDTO save(TrackDTO trackDTO) {
+    public CreateTrackDTO save(CreateTrackDTO trackDTO, User currentUser) {
         log.info("Saving track: {}", trackDTO.getTitle());
 
-        Track track = trackMapper.toEntity(trackDTO);
+        Track track = mapTrack(trackDTO, currentUser);
         track = trackRepository.save(track);
 
         kafkaIntegrationService.sendTrackToKafka(track);
 
-        return trackMapper.toDTO(track);
+        return toDto(track);
+    }
+
+    private CreateTrackDTO toDto(Track track) {
+        return CreateTrackDTO.builder()
+                .trackNumber(track.getTrack_number())
+                .title(track.getTitle())
+                .genre(track.getGenre())
+                .duration(track.getDuration())
+                .status(track.getStatus())
+                .playCount(track.getPlayCount())
+                .albumId(track.getAlbum().getId())
+                .build();
+    }
+
+    private Track mapTrack(CreateTrackDTO trackDTO, User currentUser) {
+        Album album = albomRepository.findById(trackDTO.getAlbumId())
+                .orElseThrow(() -> new NotFoundException(new ErrorDto("404", "Album not found with id: " + trackDTO.getAlbumId())));
+
+        Track track = new Track();
+        track.setTitle(trackDTO.getTitle());
+        track.setGenre(trackDTO.getGenre());
+        track.setDuration(trackDTO.getDuration());
+        track.setStatus(trackDTO.getStatus());
+        track.setUser(currentUser);
+        track.setAlbum(album);
+        track.setTrack_number(trackDTO.getTrackNumber());
+        return track;
     }
 
     @Override

@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.example.musicplayer.domain.entity.User;
+import org.example.musicplayer.dtos.track.CreateTrackDTO;
 import org.example.musicplayer.dtos.track.TrackDTO;
 import org.example.musicplayer.exception.dto.ErrorDto;
 import org.example.musicplayer.exception.errors.ForbiddenException;
@@ -40,14 +41,12 @@ public class TrackController {
 
     @PostMapping
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_ARTIST')")
-    public ResponseEntity<TrackDTO> createTrack(@RequestBody TrackDTO trackDTO) {
+    public ResponseEntity<TrackDTO> createTrack(@RequestBody CreateTrackDTO trackDTO) {
         log.info("REST request to create Track: {}", trackDTO.getTitle());
-        
-        // Устанавливаем текущего пользователя как создателя трека
+
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         User currentUser = userService.getUserByEmail(authentication.getName());
         
-        // Проверка роли пользователя
         boolean isArtist = currentUser.getRoles().stream()
                 .anyMatch(role -> role.getName().equals("ARTIST"));
         
@@ -55,10 +54,9 @@ public class TrackController {
             throw new ForbiddenException(new ErrorDto("403", "Only artists can create tracks"));
         }
         
-        // Устанавливаем ID текущего пользователя
         trackDTO.setUserId(currentUser.getId());
         
-        TrackDTO result = trackService.save(trackDTO);
+        TrackDTO result = trackService.save(trackDTO,currentUser);
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
 
@@ -69,19 +67,16 @@ public class TrackController {
             @RequestBody TrackDTO trackDTO) {
         log.info("REST request to update Track: {}, {}", id, trackDTO.getTitle());
         
-        // Проверка существования трека
         TrackDTO existingTrack = trackService.findById(id)
                 .orElseThrow(() -> new NotFoundException(
                         new ErrorDto("404", "Track not found with id: " + id)));
         
-        // Проверка прав на редактирование
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         User currentUser = userService.getUserByEmail(authentication.getName());
         
         boolean isAdmin = currentUser.getRoles().stream()
                 .anyMatch(role -> role.getName().equals("ADMIN"));
         
-        // Только владелец трека или админ может редактировать
         if (!isAdmin && !existingTrack.getUserId().equals(currentUser.getId())) {
             throw new ForbiddenException(
                     new ErrorDto("403", "You don't have permission to edit this track"));

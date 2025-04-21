@@ -41,7 +41,7 @@ public class TrackController {
 
     @PostMapping
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_ARTIST')")
-    public ResponseEntity<TrackDTO> createTrack(@RequestBody CreateTrackDTO trackDTO) {
+    public ResponseEntity<CreateTrackDTO> createTrack(@RequestBody CreateTrackDTO trackDTO) {
         log.info("REST request to create Track: {}", trackDTO.getTitle());
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -53,10 +53,9 @@ public class TrackController {
         if (!isArtist) {
             throw new ForbiddenException(new ErrorDto("403", "Only artists can create tracks"));
         }
-        
-        trackDTO.setUserId(currentUser.getId());
-        
-        TrackDTO result = trackService.save(trackDTO,currentUser);
+
+
+        CreateTrackDTO result = trackService.save(trackDTO,currentUser);
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
 

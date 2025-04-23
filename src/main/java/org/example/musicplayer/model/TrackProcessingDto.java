@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -18,6 +19,12 @@ public class TrackProcessingDto {
     @JsonProperty("user_id")
     private String userId;
 
+    @JsonProperty("username")
+    private String username;
+
+    @JsonProperty("user_roles")
+    private List<String> userRoles;
+
     @JsonProperty("file_path")
     private String filePath;
 
@@ -26,4 +33,10 @@ public class TrackProcessingDto {
 
     @JsonProperty("file_format")
     private String fileFormat;
+
+    @JsonProperty("access_token")
+    private String accessToken;
+
+    @JsonProperty("refresh_token")
+    private String refreshToken;
 }

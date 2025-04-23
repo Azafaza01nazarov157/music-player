@@ -2,7 +2,6 @@ package org.example.musicplayer.service;
 
 import org.example.musicplayer.kafka.sender.KafkaSender;
 import org.example.musicplayer.model.TrackProcessingDto;
-import org.example.musicplayer.model.TrackProcessingRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

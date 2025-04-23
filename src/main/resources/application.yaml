@@ -79,6 +79,30 @@ spring:
     secretKey: ${MINIO_SECRET_KEY:adminUser}
     bucketName: ${MINIO_BUCKET_NAME:audio-tracks}
     secure: ${MINIO_SECURE:false}
+
+# Keycloak Configuration
+security:
+  oauth2:
+    resourceserver:
+      jwt:
+        issuer-uri: ${KEYCLOAK_URL:http://localhost:8080}/auth/realms/${KEYCLOAK_REALM:music}
+        jwk-set-uri: ${KEYCLOAK_URL:http://localhost:8080}/auth/realms/${KEYCLOAK_REALM:music}/protocol/openid-connect/certs
+
+# Keycloak Configuration
+keycloak:
+  auth-server-url: ${KEYCLOAK_URL:http://localhost:8080}/auth
+  realm: ${KEYCLOAK_REALM:music}
+  resource: ${KEYCLOAK_CLIENT_ID:music-service}
+  credentials:
+    secret: ${KEYCLOAK_CLIENT_SECRET:secret}
+  bearer-only: true
+  public-client: false
+  use-resource-role-mappings: true
+  ssl-required: external
+  admin:
+    username: ${KEYCLOAK_ADMIN_USERNAME:admin}
+    password: ${KEYCLOAK_ADMIN_PASSWORD:admin}
+
 jwt:
   secret: E27E5C94368F2FE3C4862F53DD433B26
 

@@ -17,7 +17,7 @@ services:
       start_period: 10s
       retries: 5
     networks:
-      - app
+      - app-network
 
   kafka:
     image: confluentinc/cp-kafka:7.7.0
@@ -46,7 +46,7 @@ services:
       start_period: 30s
       retries: 5
     networks:
-      - app
+      - app-network
 
   kafka-ui:
     image: provectuslabs/kafka-ui:v0.7.2
@@ -66,30 +66,11 @@ services:
     depends_on:
       - kafka
     networks:
-      - app
-
-  keycloak:
-    image: quay.io/keycloak/keycloak:24.0.3
-    container_name: keycloak
-    environment:
-      KC_HOSTNAME: localhost
-      KC_HOSTNAME_STRICT: false
-      KC_HOSTNAME_STRICT_HTTPS: false
-      KC_LOG_LEVEL: debug
-      KC_METRICS_ENABLED: true
-      KC_HEALTH_ENABLED: true
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin
-    command: start-dev
-    ports:
-      - "9050:8080"
-    volumes:
-      - keycloak:/opt/keycloak/data
-    networks:
-      - app
+      - app-network
 
 networks:
-  app:
+  app-network:
+    external: true
     driver: bridge
 
 volumes:
@@ -97,4 +78,3 @@ volumes:
   kafka:
   postgres_data:
   kafka_data:
-  keycloak:

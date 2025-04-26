@@ -40,7 +40,7 @@ public class TrackController {
     private final UserService userService;
 
     @PostMapping
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_ARTIST')")
+    @PreAuthorize("hasAnyAuthority('" + UserRoles.ADMIN + "', '" + UserRoles.ARTIST + "')")
     public ResponseEntity<CreateTrackDTO> createTrack(@RequestBody CreateTrackDTO trackDTO) {
         log.info("REST request to create Track: {}", trackDTO.getTitle());
 
@@ -60,7 +60,7 @@ public class TrackController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_ARTIST')")
+    @PreAuthorize("hasAnyAuthority('" + UserRoles.ADMIN + "', '" + UserRoles.ARTIST + "')")
     public ResponseEntity<TrackDTO> updateTrack(
             @PathVariable Long id,
             @RequestBody TrackDTO trackDTO) {

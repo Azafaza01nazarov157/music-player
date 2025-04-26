@@ -1,0 +1,2 @@
+ALTER TABLE tracks
+    ALTER COLUMN file_path DROP NOT NULL;

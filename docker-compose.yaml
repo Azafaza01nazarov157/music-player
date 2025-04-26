@@ -1,4 +1,47 @@
 services:
+  spring-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: spring-app
+    ports:
+      - "8187:8187"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - app
+    environment:
+      PG_HOST: postgres
+      PG_PORT: 5432
+      PG_DATABASE: postgres
+      JDBC_DATABASE_USERNAME: postgres
+      JDBC_DATABASE_PASSWORD: postgres
+
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+
+      KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_REALM: music
+      KEYCLOAK_CLIENT_ID: music-service
+      KEYCLOAK_CLIENT_SECRET: secret
+      KEYCLOAK_ADMIN_USERNAME: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+
+      MINIO_ENDPOINT: http://localhost:9000
+      MINIO_ACCESS_KEY: adminUser
+      MINIO_SECRET_KEY: adminUser
+      MINIO_BUCKET_NAME: audio-tracks
+      MINIO_SECURE: false
+
+      SMTP_HOST: smtp.gmail.com
+      SMTP_USERNAME: azamatboss001@gmail.com
+      SMTP_PASSWORD: iatqmoajorqvynwr
+
+      CORS_URL: "*"
+      AUTHENTICATION_URL: http://localhost:8187
+
   postgres:
     image: postgres:17.4
     restart: "no"
@@ -17,7 +60,7 @@ services:
       start_period: 10s
       retries: 5
     networks:
-      - app-network
+      - app
 
   kafka:
     image: confluentinc/cp-kafka:7.7.0
@@ -46,7 +89,7 @@ services:
       start_period: 30s
       retries: 5
     networks:
-      - app-network
+      - app
 
   kafka-ui:
     image: provectuslabs/kafka-ui:v0.7.2
@@ -66,11 +109,10 @@ services:
     depends_on:
       - kafka
     networks:
-      - app-network
+      - app
 
 networks:
-  app-network:
-    external: true
+  app:
     driver: bridge
 
 volumes:

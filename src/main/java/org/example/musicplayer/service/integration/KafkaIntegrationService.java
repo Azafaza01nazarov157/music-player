@@ -9,8 +9,13 @@ import org.example.musicplayer.dtos.kafka.AlbumMessage;
 import org.example.musicplayer.dtos.kafka.TrackMessage;
 import org.example.musicplayer.dtos.kafka.UserMessage;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.OffsetDateTime;
 
@@ -20,6 +25,7 @@ import java.time.OffsetDateTime;
 public class KafkaIntegrationService {
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final RestTemplate restTemplate;
 
     @Value("${spring.kafka.topics.user-sync}")
     private String userSyncTopic;
@@ -46,10 +52,24 @@ public class KafkaIntegrationService {
                     .isDeleted(false)
                     .build();
 
-            log.info("Sending user to Kafka for sync: {}", user.getUsername());
-            kafkaTemplate.send(userSyncTopic, user.getId().toString(), userMessage);
+            log.info("Sending user to REST API for sync: {}", user.getUsername());
+
+            String apiUrl = "http://localhost:8080/api/users/sine";
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            HttpEntity<UserMessage> request = new HttpEntity<>(userMessage, headers);
+            ResponseEntity<String> response = restTemplate.postForEntity(apiUrl, request, String.class);
+
+            if (response.getStatusCode().is2xxSuccessful()) {
+                log.info("User successfully sent to REST API: {}", user.getUsername());
+            } else {
+                log.error("Failed to send user to REST API. Status code: {}", response.getStatusCodeValue());
+            }
+
         } catch (Exception e) {
-            log.error("Error sending user to Kafka: {}", e.getMessage(), e);
+            log.error("Error sending user to REST API: {}", e.getMessage(), e);
         }
     }
 
@@ -64,7 +84,7 @@ public class KafkaIntegrationService {
             TrackMessage trackMessage = TrackMessage.builder()
                     .id(track.getId())
                     .title(track.getTitle())
-                    .artistId(track.getUser().getId()) // artistId соответствует userId в нашей модели
+                    .artistId(track.getUser().getId())
                     .albumId(albumId)
                     .userId(track.getUser().getId())
                     .filePath(track.getFilePath())

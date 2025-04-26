@@ -3,6 +3,8 @@ package org.example.musicplayer.domain.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 
 import java.time.OffsetDateTime;
 import java.util.HashSet;
@@ -53,6 +55,7 @@ public class User extends AbstractAuditingEntity<Long> {
     private OffsetDateTime passwordResetDate;
 
     @ManyToMany
+    @Fetch(FetchMode.JOIN)
     @JoinTable(
             name = "UserRoles",
             joinColumns = @JoinColumn(name = "userId"),

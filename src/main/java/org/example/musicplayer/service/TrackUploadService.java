@@ -29,7 +29,6 @@ public class TrackUploadService {
             TrackProcessingDto request = new TrackProcessingDto();
             request.setTrackId(trackId);
             request.setUserId(userId);
-//            request.setAlbumId();
             request.setFilePath(objectPath);
             request.setFileName(originalFilename);
             request.setFileFormat(fileFormat);

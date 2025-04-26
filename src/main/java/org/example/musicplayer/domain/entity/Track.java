@@ -32,7 +32,7 @@ public class Track extends AbstractAuditingEntity<Long> {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(name = "file_path", nullable = false)
+    @Column(name = "file_path")
     private String filePath;
 
     @Column(name = "file_size")

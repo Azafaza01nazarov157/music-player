@@ -12,9 +12,6 @@ public class TrackProcessingDto {
     @JsonProperty("track_id")
     private String trackId;
 
-    @JsonProperty("album_id")
-    private String albumId;
-
     @JsonProperty("user_id")
     private String userId;
 

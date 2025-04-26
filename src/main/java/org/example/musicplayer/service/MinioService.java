@@ -61,7 +61,7 @@ public class MinioService {
 
             log.info("File uploaded successfully to MinIO: {}", objectName);
 
-            return bucketName + "/" + objectName;
+            return  objectName;
 
         } catch (Exception e) {
             log.error("Error uploading file to MinIO: {}", e.getMessage(), e);
